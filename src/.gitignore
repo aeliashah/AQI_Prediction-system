@@ -1,0 +1,11 @@
+# Ignore environment and system files
+.venv/
+.env
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+
+# Ignore data & models if large or temporary
+data/
+models/
