@@ -764,7 +764,26 @@ df = df.replace([float("inf"), -float("inf")], None).dropna()
 df = df.drop_duplicates(subset=["datetime"])
 
 # Correct data types
-df["aqi"] = df["aqi"].astype(int)
+# df["aqi"] = df["aqi"].astype(int)
+# ✅ Enforce correct dtypes for Hopsworks
+df["aqi"] = df["aqi"].astype("int32")
+df["pm2_5"] = df["pm2_5"].astype("float32")
+df["pm10"] = df["pm10"].astype("float32")
+df["co"] = df["co"].astype("float32")
+df["no2"] = df["no2"].astype("float32")
+df["o3"] = df["o3"].astype("float32")
+df["hour"] = df["hour"].astype("int32")
+df["dayofweek"] = df["dayofweek"].astype("int32")
+df["is_weekend"] = df["is_weekend"].astype(bool)
+df["month"] = df["month"].astype("int32")
+df["aqi_diff"] = df["aqi_diff"].astype("float32")
+df["aqi_rolling_3h"] = df["aqi_rolling_3h"].astype("float32")
+df["aqi_roc_24h"] = df["aqi_roc_24h"].astype("float32")
+df["pm25_pm10_ratio"] = df["pm25_pm10_ratio"].astype("float32")
+df["datetime_str"] = df["datetime"].astype(str)
+
+
+
 df["is_weekend"] = df["is_weekend"].astype(bool)
 df["datetime_str"] = df["datetime"].astype(str)
 
