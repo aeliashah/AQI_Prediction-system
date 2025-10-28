@@ -375,6 +375,123 @@
 # print("🎉 All done — Karachi 1-year AQI history fetched, processed, and uploaded successfully!")
 
 
+# import os
+# import requests
+# import pandas as pd
+# from datetime import datetime, timedelta
+# from dotenv import load_dotenv
+# import hopsworks
+
+# # ==============================
+# # 1️⃣ Load environment variables
+# # ==============================
+# load_dotenv()
+
+# API_KEY = os.getenv("OPENWEATHER_API_KEY")
+# HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY")
+
+# if not API_KEY or not HOPSWORKS_API_KEY:
+#     raise Exception("❌ Missing API Keys — Check .env or GitHub Secrets")
+
+# LAT = "24.8607"
+# LON = "67.0011"
+
+# # ==============================
+# # 2️⃣ Fetch 1 year AQI history
+# # ==============================
+# end_date = datetime.utcnow()
+# start_date = end_date - timedelta(days=365)
+
+# print(f"🌍 Fetching Karachi AQI data {start_date.date()} ➝ {end_date.date()}...")
+
+# url = "http://api.openweathermap.org/data/2.5/air_pollution/history"
+
+# params = {
+#     "lat": LAT,
+#     "lon": LON,
+#     "start": int(start_date.timestamp()),
+#     "end": int(end_date.timestamp()),
+#     "appid": API_KEY
+# }
+
+# response = requests.get(url, params=params)
+
+# if response.status_code != 200:
+#     print("❌ API Error:", response.status_code, response.text)
+#     exit()
+
+# data = response.json()
+# if "list" not in data:
+#     print("❌ Invalid API response:", data)
+#     exit()
+
+# rows = []
+# for r in data["list"]:
+#     rows.append({
+#         "datetime": datetime.utcfromtimestamp(r["dt"]),
+#         "aqi": r["main"]["aqi"],
+#         "pm2_5": r["components"].get("pm2_5"),
+#         "pm10": r["components"].get("pm10"),
+#         "co": r["components"].get("co"),
+#         "no2": r["components"].get("no2"),
+#         "o3": r["components"].get("o3")
+#     })
+
+# df = pd.DataFrame(rows)
+
+# print(f"✅ Retrieved {len(df)} raw rows")
+
+# # ==============================
+# # 3️⃣ Feature Engineering
+# # ==============================
+# df["hour"] = df["datetime"].dt.hour
+# df["dayofweek"] = df["datetime"].dt.dayofweek
+# df["is_weekend"] = df["dayofweek"].isin([5, 6]).astype(int)
+# df["month"] = df["datetime"].dt.month
+
+# df["aqi_diff"] = df["aqi"].diff()
+# df["aqi_rolling_3h"] = df["aqi"].rolling(3).mean()
+# df["aqi_roc_24h"] = df["aqi"].pct_change(24)
+# df["pm25_pm10_ratio"] = df["pm2_5"] / df["pm10"]
+
+# df["datetime"] = pd.to_datetime(df["datetime"])  # ✅ fix dtype
+
+# df = df.replace([float("inf"), -float("inf")], None).dropna()
+
+# print(f"✅ Features ready | Final rows: {len(df)}")
+
+# # ==============================
+# # 4️⃣ Save locally
+# # ==============================
+# os.makedirs("data", exist_ok=True)
+# df.to_csv("data/karachi_aqi_historical_1year.csv", index=False)
+# print("💾 Saved CSV")
+
+# # ==============================
+# # 5️⃣ Upload to Hopsworks FS
+# # ==============================
+# print("🔗 Connecting to Hopsworks...")
+
+# project = hopsworks.login(api_key_value=HOPSWORKS_API_KEY)
+# fs = project.get_feature_store()
+
+# feature_group = fs.get_or_create_feature_group(
+#     name="aqi_features_karachi",
+#     version=1,
+#     primary_key=["datetime"],
+#     event_time="datetime",
+#     description="Karachi AQI history + features"
+# )
+
+# df["aqi"] = df["aqi"].astype(int)  # ✅ schema fix
+
+# feature_group.insert(df, write_options={"wait_for_job": True})
+
+# print(f"✅ Uploaded {len(df)} rows to Hopsworks")
+# print("🎉 Done!")
+
+
+
 import os
 import requests
 import pandas as pd
@@ -444,9 +561,11 @@ print(f"✅ Retrieved {len(df)} raw rows")
 # ==============================
 # 3️⃣ Feature Engineering
 # ==============================
+df["datetime"] = pd.to_datetime(df["datetime"])
+
 df["hour"] = df["datetime"].dt.hour
 df["dayofweek"] = df["datetime"].dt.dayofweek
-df["is_weekend"] = df["dayofweek"].isin([5, 6]).astype(int)
+df["is_weekend"] = df["dayofweek"].isin([5, 6])  # ✅ boolean not int
 df["month"] = df["datetime"].dt.month
 
 df["aqi_diff"] = df["aqi"].diff()
@@ -454,9 +573,18 @@ df["aqi_rolling_3h"] = df["aqi"].rolling(3).mean()
 df["aqi_roc_24h"] = df["aqi"].pct_change(24)
 df["pm25_pm10_ratio"] = df["pm2_5"] / df["pm10"]
 
-df["datetime"] = pd.to_datetime(df["datetime"])  # ✅ fix dtype
-
+# ✅ Replace inf and NaN
 df = df.replace([float("inf"), -float("inf")], None).dropna()
+
+# ✅ Deduplicate
+df = df.drop_duplicates(subset=["datetime"])
+
+# ✅ Correct dtypes for Hopsworks
+df["aqi"] = df["aqi"].astype(int)
+df["is_weekend"] = df["is_weekend"].astype(bool)
+
+# ✅ Add missing required string column
+df["datetime_str"] = df["datetime"].astype(str)
 
 print(f"✅ Features ready | Final rows: {len(df)}")
 
@@ -482,8 +610,6 @@ feature_group = fs.get_or_create_feature_group(
     event_time="datetime",
     description="Karachi AQI history + features"
 )
-
-df["aqi"] = df["aqi"].astype(int)  # ✅ schema fix
 
 feature_group.insert(df, write_options={"wait_for_job": True})
 
