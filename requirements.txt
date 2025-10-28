@@ -6,5 +6,9 @@ python-dotenv
 xgboost
 joblib
 numpy
+shap
+matplotlib
+seaborn
+datetime
 
 
