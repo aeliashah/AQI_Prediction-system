@@ -28,4 +28,7 @@ jobs:
           HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
         # run: python src/update_feature_group.py
-        run: python src/fetch_aqi_data.py
+        # run: python src/fetch_aqi_data.py
+
+        run: python src/fetch_historical_aqi.py
+
