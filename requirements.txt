@@ -1,14 +1,17 @@
-﻿python-dotenv
-hopsworks
-scikit-learn
+
+pandas
+numpy
 requests
 python-dotenv
+hopsworks[python]
+scikit-learn
 xgboost
 joblib
-numpy
 shap
 matplotlib
 seaborn
 datetime
+pyarrow
+
 
 
