@@ -1,0 +1,37 @@
+name: Realtime AQI Prediction
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # runs every hour
+  workflow_dispatch:      # manual trigger
+
+jobs:
+  run-prediction:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install hopsworks joblib requests pandas python-dotenv
+
+    - name: Run realtime prediction
+      env:
+        HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+        OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+      run: python src/realtime_predict.py
+
+    - name: Upload prediction file
+      uses: actions/upload-artifact@v3
+      with:
+        name: latest_prediction
+        path: predictions/latest_prediction.json

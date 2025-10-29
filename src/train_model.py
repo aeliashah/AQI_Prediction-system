@@ -792,3 +792,92 @@ except Exception as e:
 results_df = pd.DataFrame(results).T.sort_values("RMSE")
 print("\n📈 Model Performance Summary:")
 print(results_df)
+
+
+
+
+#new
+
+# import os
+# import pandas as pd
+# import numpy as np
+# import hopsworks
+# from dotenv import load_dotenv
+
+# from sklearn.model_selection import train_test_split
+# from sklearn.ensemble import RandomForestRegressor
+# from sklearn.preprocessing import StandardScaler
+# from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+# import math
+# import json
+# import joblib
+
+# load_dotenv()
+
+# # Load data
+# df = pd.read_csv("data/processed/aqi_cleaned.csv")
+
+# # Features & target
+# X = df.drop(columns=["AQI"])
+# y = df["AQI"]
+
+# # Train-test split
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# # Scaling
+# scaler = StandardScaler()
+# X_train = scaler.fit_transform(X_train)
+# X_test = scaler.transform(X_test)
+
+# # Train model
+# model = RandomForestRegressor(n_estimators=200, random_state=42)
+# model.fit(X_train, y_train)
+
+# # ============================
+# # ✅ Evaluate model
+# # ============================
+# y_pred = model.predict(X_test)
+
+# rmse = math.sqrt(mean_squared_error(y_test, y_pred))
+# mae = mean_absolute_error(y_test, y_pred)
+# r2 = r2_score(y_test, y_pred)
+
+# print("\n✅ Model Performance:")
+# print(f"RMSE: {rmse:.2f}")
+# print(f"MAE: {mae:.2f}")
+# print(f"R² Score: {r2:.3f}")
+
+# # Save metrics JSON
+# metrics = {
+#     "rmse": rmse,
+#     "mae": mae,
+#     "r2": r2
+# }
+
+# with open("model_metrics.json", "w") as f:
+#     json.dump(metrics, f)
+# print("📁 Metrics saved → model_metrics.json")
+
+# # ===============================
+# # ✅ Save model & scaler locally
+# # ===============================
+# os.makedirs("models", exist_ok=True)
+# joblib.dump(model, "models/aqi_model.pkl")
+# joblib.dump(scaler, "models/scaler.pkl")
+
+# print("✅ Model & scaler saved locally")
+
+# # ===============================
+# # ✅ Upload to Hopsworks
+# # ===============================
+# project = hopsworks.login()
+# mr = project.get_model_registry()
+
+# model_dir = "models"
+# model_meta = mr.python.create_model(
+#     name="aqi_predictor_model",
+#     metrics=metrics
+# )
+
+# model_meta.save(model_dir)
+# print("🚀 Model & metrics registered in Hopsworks successfully!")
